@@ -30,16 +30,18 @@
 
   #pdfContainer {
     flex: 1;
-    overflow: auto;
+    overflow-y: auto; /* przewijanie pionowe */
     display: flex;
-    justify-content: center;
-    align-items: center;
+    flex-direction: column; /* kolejne strony w pionie */
+    align-items: center; /* centrowanie w poziomie */
+    padding: 10px 0;
   }
 
   canvas {
-    max-width: 100%;
-    height: auto !important;
+    width: 100%; /* dopasowanie do szerokości kontenera */
+    height: auto; /* zachowanie proporcji */
     display: block;
+    margin-bottom: 10px; /* odstęp między stronami */
   }
 
   @media (max-width: 600px) {
@@ -56,22 +58,25 @@
   <img src="images/en.png" alt="EN" onclick="loadPDF('pdf/menu_en.pdf')">
 </div>
 
-<div id="pdfContainer">
-  <canvas id="pdfCanvas"></canvas>
-</div>
+<div id="pdfContainer"></div>
 
-<!-- PDF.js z CDN (wersja 2.16.105) -->
+<!-- PDF.js z CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <script>
-const pdfjsLib = window['pdfjsLib']; // kluczowe
-const canvas = document.getElementById('pdfCanvas');
-const ctx = canvas.getContext('2d');
+const container = document.getElementById('pdfContainer');
 let pdfDoc = null;
 
+function clearContainer() {
+  container.innerHTML = '';
+}
+
 function loadPDF(url) {
+  clearContainer();
   pdfjsLib.getDocument(url).promise.then(pdf => {
     pdfDoc = pdf;
-    renderPage(1);
+    for (let i = 1; i <= pdf.numPages; i++) {
+      renderPage(i);
+    }
   }).catch(err => {
     console.error("PDF load error:", err);
     alert("Nie udało się załadować PDF: " + url);
@@ -79,22 +84,18 @@ function loadPDF(url) {
 }
 
 function renderPage(num) {
-  if (!pdfDoc) return;
   pdfDoc.getPage(num).then(page => {
     const viewport = page.getViewport({ scale: 1 });
-
-    const containerWidth = document.getElementById('pdfContainer').clientWidth;
-    const containerHeight = document.getElementById('pdfContainer').clientHeight;
-    const scaleWidth = containerWidth / viewport.width;
-    const scaleHeight = containerHeight / viewport.height;
-    const scale = Math.min(scaleWidth, scaleHeight);
-
+    const scale = container.clientWidth / viewport.width;
     const scaledViewport = page.getViewport({ scale: scale });
 
+    const canvas = document.createElement('canvas');
     canvas.width = scaledViewport.width;
     canvas.height = scaledViewport.height;
+    const ctx = canvas.getContext('2d');
 
     page.render({ canvasContext: ctx, viewport: scaledViewport });
+    container.appendChild(canvas);
   });
 }
 
@@ -103,7 +104,13 @@ loadPDF('pdf/menu_pl.pdf');
 
 // Automatyczne dopasowanie przy zmianie rozmiaru ekranu
 window.addEventListener('resize', () => {
-  if (pdfDoc) renderPage(1);
+  if (pdfDoc) {
+    const pages = container.querySelectorAll('canvas');
+    container.innerHTML = '';
+    for (let i = 1; i <= pdfDoc.numPages; i++) {
+      renderPage(i);
+    }
+  }
 });
 </script>
 
