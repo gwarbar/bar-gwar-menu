@@ -64,7 +64,7 @@
 <body>
 
 <div class="topbar">
-  <div id="infoText">Zamówienia przy barze</div>
+  <div id="infoText">Zamówienia przyjmujemy przy barze</div>
   <div class="flags">
     <img src="images/pl.png" alt="PL" onclick="switchLang('pl')">
     <img src="images/en.png" alt="EN" onclick="switchLang('en')">
@@ -82,7 +82,7 @@ let pdfDoc = null;
 
 function switchLang(lang) {
   if (lang === 'pl') {
-    infoText.textContent = "Zamówienia przy barze";
+    infoText.textContent = "Zamówienia przyjmujemy przy barze";
     loadPDF('pdf/menu_pl.pdf');
   } else {
     infoText.textContent = "We order at the bar";
