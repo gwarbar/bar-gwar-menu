@@ -11,26 +11,17 @@
     display: flex;
     flex-direction: column;
     height: 100vh;
-    overflow: hidden;
   }
 
-  .flags-bar {
-    position: relative;
-    background: #111;
-    padding: 10px;
+  .topbar {
     display: flex;
-    justify-content: flex-end; /* Flagi po prawej */
+    justify-content: space-between;
     align-items: center;
-  }
-
-  .order-text {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    color: #DA3365;
-    font-size: 18px;
+    padding: 10px;
+    background: rgb(218, 51, 101); /* kolor #da3365 */
+    color: white;
     font-weight: bold;
-    white-space: nowrap;
+    font-size: 14px;
   }
 
   .flags {
@@ -38,61 +29,74 @@
     gap: 10px;
   }
 
-  .flags img {
-    width: 40px;
-    height: auto;
-    cursor: pointer;
-  }
+ .flags img {
+  width: 40px;
+  height: auto;
+  cursor: pointer;
+  border: 1px solid white;
+  border-radius: 2px;
+}
 
   #pdfContainer {
     flex: 1;
-    overflow: auto;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    overflow-y: auto;
+    background: black;
+    padding: 10px;
   }
 
   canvas {
     max-width: 100%;
     height: auto !important;
     display: block;
+    margin: 0 auto 20px auto;
   }
 
   @media (max-width: 600px) {
     .flags img {
       width: 30px;
     }
-    .order-text {
-      font-size: 16px;
+    .topbar {
+      font-size: 12px;
     }
   }
 </style>
 </head>
 <body>
 
-<div class="flags-bar">
-  <div class="order-text" id="orderText">Zamawiaj przy barze</div>
+<div class="topbar">
+  <div id="infoText">Zamówienia przy barze</div>
   <div class="flags">
-    <img src="images/pl.png" alt="PL" onclick="setLanguage('pl')">
-    <img src="images/en.png" alt="EN" onclick="setLanguage('en')">
+    <img src="images/pl.png" alt="PL" onclick="switchLang('pl')">
+    <img src="images/en.png" alt="EN" onclick="switchLang('en')">
   </div>
 </div>
 
-<div id="pdfContainer">
-  <canvas id="pdfCanvas"></canvas>
-</div>
+<div id="pdfContainer"></div>
 
 <!-- PDF.js z CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <script>
-const canvas = document.getElementById('pdfCanvas');
-const ctx = canvas.getContext('2d');
+const pdfContainer = document.getElementById('pdfContainer');
+const infoText = document.getElementById('infoText');
 let pdfDoc = null;
+
+function switchLang(lang) {
+  if (lang === 'pl') {
+    infoText.textContent = "Zamówienia przy barze";
+    loadPDF('pdf/menu_pl.pdf');
+  } else {
+    infoText.textContent = "We order at the bar";
+    loadPDF('pdf/menu_en.pdf');
+  }
+}
 
 function loadPDF(url) {
   pdfjsLib.getDocument(url).promise.then(pdf => {
     pdfDoc = pdf;
-    renderPage(1);
+    pdfContainer.innerHTML = ""; // wyczyść stare strony
+    for (let num = 1; num <= pdf.numPages; num++) {
+      renderPage(num);
+    }
   }).catch(err => {
     console.error("PDF load error:", err);
     alert("Nie udało się załadować PDF: " + url);
@@ -100,40 +104,33 @@ function loadPDF(url) {
 }
 
 function renderPage(num) {
-  if (!pdfDoc) return;
   pdfDoc.getPage(num).then(page => {
     const viewport = page.getViewport({ scale: 1 });
-    const containerWidth = document.getElementById('pdfContainer').clientWidth;
-    const containerHeight = document.getElementById('pdfContainer').clientHeight;
-    const scaleWidth = containerWidth / viewport.width;
-    const scaleHeight = containerHeight / viewport.height;
-    const scale = Math.min(scaleWidth, scaleHeight);
 
-    const scaledViewport = page.getViewport({ scale: scale });
+    const containerWidth = pdfContainer.clientWidth;
+    const scale = containerWidth / viewport.width;
+    const scaledViewport = page.getViewport({ scale });
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
     canvas.width = scaledViewport.width;
     canvas.height = scaledViewport.height;
+
+    pdfContainer.appendChild(canvas);
+
     page.render({ canvasContext: ctx, viewport: scaledViewport });
   });
 }
 
-// Domyślnie ładowanie polskiego menu
-loadPDF('pdf/menu_pl.pdf');
+// Domyślnie ładujemy polskie menu
+switchLang('pl');
 
-// Obsługa zmiany języka
-function setLanguage(lang) {
-  const orderText = document.getElementById('orderText');
-  if(lang === 'pl') {
-    orderText.textContent = "Zamówienia przyjmujemy przy barze";
-    loadPDF('pdf/menu_pl.pdf');
-  } else {
-    orderText.textContent = "We order at the bar";
-    loadPDF('pdf/menu_en.pdf');
-  }
-}
-
-// Automatyczne dopasowanie przy zmianie rozmiaru ekranu
+// Obsługa zmiany rozmiaru ekranu
 window.addEventListener('resize', () => {
-  if (pdfDoc) renderPage(1);
+  if (pdfDoc) {
+    const currentLang = infoText.textContent.includes("Zamówienia") ? "pl" : "en";
+    switchLang(currentLang);
+  }
 });
 </script>
 
