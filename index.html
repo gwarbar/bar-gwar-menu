@@ -60,21 +60,25 @@
   <canvas id="pdfCanvas"></canvas>
 </div>
 
-<!-- PDF.js -->
+<!-- PDF.js z CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.88/pdf.min.js"></script>
 <script>
+const canvas = document.getElementById('pdfCanvas');
+const ctx = canvas.getContext('2d');
 let pdfDoc = null;
-let canvas = document.getElementById('pdfCanvas');
-let ctx = canvas.getContext('2d');
 
 function loadPDF(url) {
   pdfjsLib.getDocument(url).promise.then(pdf => {
     pdfDoc = pdf;
     renderPage(1);
+  }).catch(err => {
+    console.error("PDF load error:", err);
+    alert("Nie udało się załadować PDF: " + url);
   });
 }
 
 function renderPage(num) {
+  if (!pdfDoc) return;
   pdfDoc.getPage(num).then(page => {
     const viewport = page.getViewport({ scale: 1 });
     const containerWidth = document.getElementById('pdfContainer').clientWidth;
@@ -88,10 +92,10 @@ function renderPage(num) {
   });
 }
 
-// Domyślnie ładujemy polskie menu
+// Domyślnie ładowanie polskiego menu
 loadPDF('pdf/menu_pl.pdf');
 
-// Przeładowanie przy zmianie rozmiaru ekranu
+// Automatyczne dopasowanie przy zmianie rozmiaru ekranu
 window.addEventListener('resize', () => {
   if (pdfDoc) renderPage(1);
 });
