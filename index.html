@@ -60,14 +60,15 @@
   <canvas id="pdfCanvas"></canvas>
 </div>
 
-<!-- PDF.js z CDN w wersji 2.x -->
-<script src="js/pdf.min.js"></script>
-  <script>
+<!-- PDF.js z CDN (wersja 2.16.105) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script>
+const pdfjsLib = window['pdfjsLib']; // kluczowe
 const canvas = document.getElementById('pdfCanvas');
 const ctx = canvas.getContext('2d');
 let pdfDoc = null;
 
-function loadPDF(url) { //
+function loadPDF(url) {
   pdfjsLib.getDocument(url).promise.then(pdf => {
     pdfDoc = pdf;
     renderPage(1);
