@@ -67,7 +67,7 @@ const canvas = document.getElementById('pdfCanvas');
 const ctx = canvas.getContext('2d');
 let pdfDoc = null;
 
-function loadPDF(url) {
+function loadPDF(url) { //
   pdfjsLib.getDocument(url).promise.then(pdf => {
     pdfDoc = pdf;
     renderPage(1);
