@@ -30,18 +30,17 @@
 
   #pdfContainer {
     flex: 1;
-    overflow-y: auto; /* przewijanie pionowe */
+    overflow: auto;
     display: flex;
-    flex-direction: column; /* kolejne strony w pionie */
-    align-items: center; /* centrowanie w poziomie */
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
     padding: 10px 0;
   }
 
   canvas {
-    width: 100%; /* dopasowanie do szerokości kontenera */
-    height: auto; /* zachowanie proporcji */
     display: block;
-    margin-bottom: 10px; /* odstęp między stronami */
   }
 
   @media (max-width: 600px) {
@@ -66,15 +65,15 @@
 const container = document.getElementById('pdfContainer');
 let pdfDoc = null;
 
-function clearContainer() {
+function clearPDF() {
   container.innerHTML = '';
 }
 
 function loadPDF(url) {
-  clearContainer();
+  clearPDF();
   pdfjsLib.getDocument(url).promise.then(pdf => {
     pdfDoc = pdf;
-    for (let i = 1; i <= pdf.numPages; i++) {
+    for (let i = 1; i <= pdfDoc.numPages; i++) {
       renderPage(i);
     }
   }).catch(err => {
@@ -86,14 +85,20 @@ function loadPDF(url) {
 function renderPage(num) {
   pdfDoc.getPage(num).then(page => {
     const viewport = page.getViewport({ scale: 1 });
-    const scale = container.clientWidth / viewport.width;
-    const scaledViewport = page.getViewport({ scale: scale });
+    const scaleWidth = container.clientWidth / viewport.width;
+    const scaleHeight = window.innerHeight / viewport.height; // maksymalna wysokość okna
+    const scale = Math.min(scaleWidth, scaleHeight);
+
+    const scaledViewport = page.getViewport({ scale: scale * window.devicePixelRatio });
 
     const canvas = document.createElement('canvas');
+    canvas.style.width = (scaledViewport.width / window.devicePixelRatio) + "px";
+    canvas.style.height = (scaledViewport.height / window.devicePixelRatio) + "px";
+
     canvas.width = scaledViewport.width;
     canvas.height = scaledViewport.height;
-    const ctx = canvas.getContext('2d');
 
+    const ctx = canvas.getContext('2d');
     page.render({ canvasContext: ctx, viewport: scaledViewport });
     container.appendChild(canvas);
   });
@@ -104,13 +109,7 @@ loadPDF('pdf/menu_pl.pdf');
 
 // Automatyczne dopasowanie przy zmianie rozmiaru ekranu
 window.addEventListener('resize', () => {
-  if (pdfDoc) {
-    const pages = container.querySelectorAll('canvas');
-    container.innerHTML = '';
-    for (let i = 1; i <= pdfDoc.numPages; i++) {
-      renderPage(i);
-    }
-  }
+  if (pdfDoc) loadPDF(pdfDoc._pdfInfo.url);
 });
 </script>
 
